@@ -12,8 +12,15 @@
                     <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                         {{ __('Dashboard') }}
                     </x-nav-link>
-                    @if (Auth::user()->role == 'admin')
-                        <x-nav-link :href="route('tpi.index')" :active="request()->routeIs('tpi.index')">
+
+                    {{-- ── Admin ──────────────────────────────────── --}}
+                    @if (Auth::user()->role === 'admin')
+                        <x-nav-link :href="route('dinas.index')"
+                            :active="request()->routeIs('dinas.index', 'dinas.create', 'dinas.edit')">
+                            {{ __('Dinas') }}
+                        </x-nav-link>
+                        <x-nav-link :href="route('tpi.index')"
+                            :active="request()->routeIs('tpi.index', 'tpi.create', 'tpi.edit')">
                             {{ __('TPI') }}
                         </x-nav-link>
                         <x-nav-link :href="route('pembeli.index')" :active="request()->routeIs('pembeli.index')">
@@ -23,38 +30,56 @@
                             {{ __('Laporan') }}
                         </x-nav-link>
                     @endif
-                    @if (Auth::user()->role == 'tpi' || Auth::user()->role == 'pembeli')
-                        <x-nav-link :href="route('jadwal.index')" :active="request()->routeIs('jadwal.index')">
-                            {{ __('Jadwal') }}
+
+                    {{-- ── Dinas ──────────────────────────────────── --}}
+                    @if (Auth::user()->role === 'dinas')
+                        <x-nav-link :href="route('tpi.index')"
+                            :active="request()->routeIs('tpi.index', 'tpi.create', 'tpi.edit')">
+                            {{ __('TPI Saya') }}
                         </x-nav-link>
-                    @endif
-                    @if (Auth::user()->role == 'tpi')
-                        <x-nav-link :href="route('produk.index')" :active="request()->routeIs('produk.index')">
-                            {{ __('Produk') }}
-                        </x-nav-link>
-                         <x-nav-link :href="route('laporan.lelang')" :active="request()->routeIs('laporan.lelang')">
+                        <x-nav-link :href="route('laporan.lelang')" :active="request()->routeIs('laporan.lelang')">
                             {{ __('Laporan') }}
                         </x-nav-link>
                     @endif
-                    @if (Auth::user()->role == 'pembeli')
+
+                    {{-- ── TPI ────────────────────────────────────── --}}
+                    @if (Auth::user()->role === 'tpi')
+                        <x-nav-link :href="route('jadwal.index')" :active="request()->routeIs('jadwal.index')">
+                            {{ __('Jadwal') }}
+                        </x-nav-link>
+                        <x-nav-link :href="route('produk.index')" :active="request()->routeIs('produk.index')">
+                            {{ __('Produk') }}
+                        </x-nav-link>
+                        <x-nav-link :href="route('laporan.lelang')" :active="request()->routeIs('laporan.lelang')">
+                            {{ __('Laporan') }}
+                        </x-nav-link>
+                    @endif
+
+                    {{-- ── Pembeli ─────────────────────────────────── --}}
+                    @if (Auth::user()->role === 'pembeli')
+                        <x-nav-link :href="route('jadwal.index')" :active="request()->routeIs('jadwal.index')">
+                            {{ __('Jadwal') }}
+                        </x-nav-link>
                         <x-nav-link :href="route('lelang.index')" :active="request()->routeIs('lelang.index')">
                             {{ __('Lelang') }}
                         </x-nav-link>
                     @endif
-                    
                 </div>
             </div>
 
+            {{-- Dropdown user kanan atas --}}
             <div class="hidden sm:flex sm:items-center sm:ms-6">
                 <x-dropdown align="right" width="48">
                     <x-slot name="trigger">
                         <button
                             class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
                             <div>{{ Auth::user()->name }}</div>
-
+                            {{-- Badge role kecil --}}
+                            <span class="ms-2 text-xs bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded capitalize">
+                                {{ Auth::user()->role }}
+                            </span>
                             <div class="ms-1">
-                                <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg"
-                                    viewBox="0 0 20 20">
+                                <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
                                     <path fill-rule="evenodd"
                                         d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
                                         clip-rule="evenodd" />
@@ -70,10 +95,8 @@
 
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
-
                             <x-dropdown-link :href="route('logout')"
-                                onclick="event.preventDefault();
-                                                this.closest('form').submit();">
+                                onclick="event.preventDefault(); this.closest('form').submit();">
                                 {{ __('Log Out') }}
                             </x-dropdown-link>
                         </form>
@@ -81,6 +104,7 @@
                 </x-dropdown>
             </div>
 
+            {{-- Hamburger mobile --}}
             <div class="-me-2 flex items-center sm:hidden">
                 <button @click="open = ! open"
                     class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 focus:text-gray-500 transition duration-150 ease-in-out">
@@ -88,45 +112,66 @@
                         <path :class="{ 'hidden': open, 'inline-flex': !open }" class="inline-flex"
                             stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M4 6h16M4 12h16M4 18h16" />
-                        <path :class="{ 'hidden': !open, 'inline-flex': open }" class="hidden" stroke-linecap="round"
-                            stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        <path :class="{ 'hidden': !open, 'inline-flex': open }" class="hidden"
+                            stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 </button>
             </div>
         </div>
     </div>
 
+    {{-- Menu mobile --}}
     <div :class="{ 'block': open, 'hidden': !open }" class="hidden sm:hidden">
         <div class="pt-2 pb-3 space-y-1">
             <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                 {{ __('Dashboard') }}
             </x-responsive-nav-link>
-            @if (Auth::user()->role == 'admin')
+
+            {{-- Admin --}}
+            @if (Auth::user()->role === 'admin')
+                <x-responsive-nav-link :href="route('dinas.index')" :active="request()->routeIs('dinas.index')">
+                    {{ __('Dinas') }}
+                </x-responsive-nav-link>
                 <x-responsive-nav-link :href="route('tpi.index')" :active="request()->routeIs('tpi.index')">
                     {{ __('TPI') }}
                 </x-responsive-nav-link>
-            @endif
-            @if (Auth::user()->role == 'admin')
                 <x-responsive-nav-link :href="route('pembeli.index')" :active="request()->routeIs('pembeli.index')">
                     {{ __('Pembeli') }}
                 </x-responsive-nav-link>
-            @endif
-            @if (Auth::user()->role == 'admin')
                 <x-responsive-nav-link :href="route('laporan.lelang')" :active="request()->routeIs('laporan.lelang')">
                     {{ __('Laporan') }}
                 </x-responsive-nav-link>
             @endif
-            @if  (Auth::user()->role == 'tpi' || Auth::user()->role == 'pembeli')
+
+            {{-- Dinas --}}
+            @if (Auth::user()->role === 'dinas')
+                <x-responsive-nav-link :href="route('tpi.index')" :active="request()->routeIs('tpi.index')">
+                    {{ __('TPI Saya') }}
+                </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('laporan.lelang')" :active="request()->routeIs('laporan.lelang')">
+                    {{ __('Laporan') }}
+                </x-responsive-nav-link>
+            @endif
+
+            {{-- TPI --}}
+            @if (Auth::user()->role === 'tpi')
                 <x-responsive-nav-link :href="route('jadwal.index')" :active="request()->routeIs('jadwal.index')">
                     {{ __('Jadwal') }}
                 </x-responsive-nav-link>
-            @endif
-            @if (Auth::user()->role == 'tpi')
                 <x-responsive-nav-link :href="route('produk.index')" :active="request()->routeIs('produk.index')">
                     {{ __('Produk') }}
                 </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('laporan.lelang')" :active="request()->routeIs('laporan.lelang')">
+                    {{ __('Laporan') }}
+                </x-responsive-nav-link>
             @endif
-            @if (Auth::user()->role == 'pembeli')
+
+            {{-- Pembeli --}}
+            @if (Auth::user()->role === 'pembeli')
+                <x-responsive-nav-link :href="route('jadwal.index')" :active="request()->routeIs('jadwal.index')">
+                    {{ __('Jadwal') }}
+                </x-responsive-nav-link>
                 <x-responsive-nav-link :href="route('lelang.index')" :active="request()->routeIs('lelang.index')">
                     {{ __('Lelang') }}
                 </x-responsive-nav-link>
@@ -137,6 +182,7 @@
             <div class="px-4">
                 <div class="font-medium text-base text-gray-800">{{ Auth::user()->name }}</div>
                 <div class="font-medium text-sm text-gray-500">{{ Auth::user()->email }}</div>
+                <div class="text-xs text-gray-400 capitalize">{{ Auth::user()->role }}</div>
             </div>
 
             <div class="mt-3 space-y-1">
@@ -146,10 +192,8 @@
 
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
-
                     <x-responsive-nav-link :href="route('logout')"
-                        onclick="event.preventDefault();
-                                            this.closest('form').submit();">
+                        onclick="event.preventDefault(); this.closest('form').submit();">
                         {{ __('Log Out') }}
                     </x-responsive-nav-link>
                 </form>
@@ -157,4 +201,3 @@
         </div>
     </div>
 </nav>
-

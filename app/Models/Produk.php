@@ -9,7 +9,8 @@ class Produk extends Model
 {
     use HasFactory;
 
-    protected $fillable = [ // kolom yang boleh diisi
+    protected $fillable = [
+        'tpi_id',
         'foto',
         'jenis_ikan',
         'berat',
@@ -18,32 +19,41 @@ class Produk extends Model
         'status_lelang',
         'waktu_mulai',
         'waktu_selesai',
+        'waktu_gugur_pemenang1',
         'pemenang_lelang_id',
+        'pemenang_cadangan_id',
         'harga_akhir',
     ];
 
     protected $casts = [
-        'waktu_mulai' => 'datetime',
-        'waktu_selesai' => 'datetime',
+        'waktu_mulai'           => 'datetime',
+        'waktu_selesai'         => 'datetime',
         'waktu_gugur_pemenang1' => 'datetime',
-        // tambahkan kolom tanggal lain jika ada
     ];
+
+    // TPI pemilik produk ini
+    public function tpi()
+    {
+        return $this->belongsTo(User::class, 'tpi_id');
+    }
 
     public function penawaran()
     {
         return $this->hasMany(Penawaran::class);
     }
-    // app/Models/Produk.php
 
     public function pemenangLelang()
     {
         return $this->belongsTo(User::class, 'pemenang_lelang_id');
     }
 
-    // App/Models/Produk.php
     public function pemenangCadangan()
     {
         return $this->belongsTo(User::class, 'pemenang_cadangan_id');
     }
-    
+
+    public function pembayarans()
+    {
+        return $this->hasMany(Pembayaran::class, 'produk_id');
+    }
 }

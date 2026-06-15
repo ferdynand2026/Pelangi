@@ -11,22 +11,29 @@ class CheckRole
 {
     /**
      * Handle an incoming request.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \Closure(\Illuminate\Http\Request): (\Illuminate\Http\Response)  $next
-     * @param  string  ...$roles
-     * @return \Illuminate\Http\Response
+     * Mendukung role: admin, dinas, tpi, pembeli
      */
-    public function handle(Request $request, Closure $next, ...$roles): Response
+    public function handle(Request $request, Closure $next, string ...$roles): Response
     {
+        // Belum login → redirect ke halaman login
         if (!Auth::check()) {
-            return response('Unauthorized.', 403); // Or redirect to login
+            return redirect()->route('login');
         }
 
-        if (in_array(Auth::user()->role, $roles)) {
-            return $next($request);
+        $user = Auth::user();
+
+        // Akun nonaktif → logout dan tolak akses
+        if (!$user->isActive()) {
+            Auth::logout();
+            return redirect()->route('login')
+                ->withErrors(['status' => 'Akun Anda tidak aktif.']);
         }
 
-        return response('Unauthorized.', 403);
+        // Role tidak sesuai → 403
+        if (!in_array($user->role, $roles)) {
+            abort(403, 'Anda tidak memiliki akses ke halaman ini.');
+        }
+
+        return $next($request);
     }
 }

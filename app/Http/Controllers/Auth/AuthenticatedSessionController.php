@@ -27,16 +27,24 @@ class AuthenticatedSessionController extends Controller
     {
         $request->authenticate();
 
-        $user = Auth::user(); // Get the authenticated user
+        $user = Auth::user();
 
-        if ($user->status == 0) { // Check the user's status
-            Auth::logout(); // Log out the user
-            throw ValidationException::withMessages([ // Throw a validation exception
+        // Cek status akun
+        if ($user->status == 0) {
+            Auth::logout();
+            throw ValidationException::withMessages([
                 'status' => ['Akun Anda tidak aktif, silahkan hubungi admin.'],
             ]);
         }
 
         $request->session()->regenerate();
+
+        // Simpan session_id baru ke DB
+        // Dipakai oleh FingerprintController untuk menghapus session lama
+        // saat ada login dari device lain (action=keep)
+        $user->update([
+            'session_id' => $request->session()->getId(),
+        ]);
 
         return redirect()->intended(route('dashboard', absolute: false));
     }
@@ -46,6 +54,13 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
+        // Bersihkan session_id di DB saat user logout manual
+        if (Auth::check()) {
+            Auth::user()->update([
+                'session_id' => null,
+            ]);
+        }
+
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();
@@ -55,4 +70,3 @@ class AuthenticatedSessionController extends Controller
         return redirect('/');
     }
 }
-

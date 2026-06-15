@@ -9,14 +9,8 @@ use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
     protected $fillable = [
         'name',
         'email',
@@ -25,44 +19,71 @@ class User extends Authenticatable implements MustVerifyEmail
         'role',
         'password',
         'status',
+        'dinas_id',
+        'fingerprint_device',
+        'action',
+        'session_id',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
             'email_verified_at' => 'datetime',
-            'password' => 'hashed',
+            'password'          => 'hashed',
         ];
     }
 
-    /**
-     * Cek apakah user memiliki peran admin.
-     *
-     * @return bool
-     */
+    // ── Role checks ───────────────────────────────────────────────
+
     public function isAdmin(): bool
     {
-        return $this->role === 'admin'; // Sesuaikan 'admin' dengan nilai peran admin Anda
+        return $this->role === 'admin';
     }
 
-    public function isActive()
+    public function isDinas(): bool
+    {
+        return $this->role === 'dinas';
+    }
+
+    public function isTpi(): bool
+    {
+        return $this->role === 'tpi';
+    }
+
+    public function isActive(): bool
     {
         return $this->status == 1;
+    }
+
+    // ── Relasi ────────────────────────────────────────────────────
+
+    // Dinas memiliki banyak TPI
+    public function tpiList()
+    {
+        return $this->hasMany(User::class, 'dinas_id')->where('role', 'tpi');
+    }
+
+    // TPI milik satu Dinas
+    public function dinas()
+    {
+        return $this->belongsTo(User::class, 'dinas_id');
+    }
+
+    // TPI memiliki banyak produk
+    public function produks()
+    {
+        return $this->hasMany(Produk::class, 'tpi_id');
+    }
+
+    // TPI memiliki banyak jadwal
+    public function jadwals()
+    {
+        return $this->hasMany(Jadwal::class, 'tpi_id');
     }
 
     public function penawaran()

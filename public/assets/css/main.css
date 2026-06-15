@@ -247,7 +247,7 @@ h6 {
     padding: 10px 20px;
     font-size: 15px;
     text-transform: none;
-    color: var(--nav-dropdown-color);
+    color: var(--nav-dropdown-color); 
   }
 
   .navmenu .dropdown ul a i {
@@ -304,7 +304,7 @@ h6 {
     padding: 10px 0;
     margin: 0;
     border-radius: 6px;
-    background-color: var(--nav-mobile-background-color);
+    background-color: #172e57 !important;
     overflow-y: auto;
     transition: 0.3s;
     z-index: 9998;
@@ -468,6 +468,7 @@ h6 {
   font-size: 15px;
   color: var(--heading-color);
   margin-bottom: 20px;
+  color: #fff !important;
 }
 
 .footer .widget ul li {
@@ -477,6 +478,7 @@ h6 {
 
 .footer .widget ul li a {
   color: color-mix(in srgb, var(--heading-color), transparent 50%);
+  color: #f4a300 !important;
 }
 
 .footer .widget ul li a:hover {
@@ -503,7 +505,7 @@ h6 {
 }
 
 .footer .social-icons li a span {
-  color: color-mix(in srgb, var(--heading-color), transparent 0%);
+  color: #fff;
   position: absolute;
   top: 50%;
   left: 50%;
@@ -583,7 +585,7 @@ h6 {
   top: calc(50% - 30px);
   left: calc(50% - 30px);
   border: 6px solid #ffffff;
-  border-color: var(--accent-color) transparent var(--accent-color) transparent;
+  border-color: #f4a300 transparent #f4a300 transparent;
   border-radius: 50%;
   width: 60px;
   height: 60px;
@@ -610,7 +612,7 @@ h6 {
   right: 15px;
   bottom: 15px;
   z-index: 99999;
-  background-color: var(--accent-color);
+  background-color: #f4a300;
   width: 40px;
   height: 40px;
   border-radius: 4px;
@@ -624,7 +626,7 @@ h6 {
 }
 
 .scroll-top:hover {
-  background-color: color-mix(in srgb, var(--accent-color), transparent 20%);
+  background-color: #172e57;
   color: var(--contrast-color);
 }
 
@@ -2379,4 +2381,58 @@ section,
   padding-left: 5px;
   color: color-mix(in srgb, var(--default-color), transparent 60%);
   font-size: 14px;
+}
+
+.navmenu ul li a.active {
+  font-weight: 700;
+}
+
+/* Style dasar untuk tombol nav */
+#navmenu ul li a.btn-nav {
+    padding: 8px 20px !important;
+    border-radius: 6px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+/* Tombol Daftar - outline style */
+#navmenu ul li a.btn-nav-outline {
+    border: 2px solid #f4a300;
+    color: #f4a300 !important;
+    background: transparent;
+}
+
+#navmenu ul li a.btn-nav-outline:hover {
+    background-color: #f4a300;
+    color: #172e57 !important;
+}
+
+/* Tombol Login - solid/filled style */
+#navmenu ul li a.btn-nav-fill {
+    background-color: #f4a300;
+    color: #172e57 !important;
+    border: 2px solid #f4a300;
+}
+
+#navmenu ul li a.btn-nav-fill:hover {
+    background-color: transparent;
+    color: #f4a300 !important;
+    border-color: #fff;
+}
+
+/* Hilangkan underline/garis bawah default saat active untuk tombol */
+#navmenu ul li a.btn-nav.active::before,
+#navmenu ul li a.btn-nav-outline.active,
+#navmenu ul li a.btn-nav-fill.active {
+    background: none !important;
+}
+
+#navmenu ul li a.btn-nav-fill.active {
+    background-color: #f4a300 !important;
+    color: #172e57 !important;
+}
+
+#navmenu ul li a.btn-nav-outline.active {
+    background-color: #f4a300 !important;
+    color: #172e57 !important;
 }

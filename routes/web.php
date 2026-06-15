@@ -3,133 +3,154 @@
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\TpiController;
-use App\Http\Middleware\CheckRole; // Tambahkan ini
+use App\Http\Middleware\CheckRole;
 use App\Http\Controllers\PembeliController;
-use App\Http\Controllers\ProdukController; // Import ProdukController
-use App\Http\Controllers\JadwalController; // Import JadwalController
+use App\Http\Controllers\ProdukController;
+use App\Http\Controllers\JadwalController;
 use App\Http\Controllers\PenawaranController;
 use App\Http\Controllers\PembayaranController;
 use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\LaporanLelangController;
 use App\Http\Controllers\ContactController;
+use App\Http\Controllers\FingerprintController;
+use App\Http\Controllers\RealtimeMonitoringController;
+use App\Http\Controllers\DinasController;
 use Illuminate\Support\Facades\Mail;
-use App\Models\Pembayaran;
 
-// Route untuk halaman daftar lelang yang dapat diakses tanpa login
+// ── Public routes ─────────────────────────────────────────────────
 
+Route::get('/', [ProdukController::class, 'landing'])->name('landingpage');
 
-Route::get('/', function () {
-    return view('landingpage');
-})->name('landingpage');
+Route::get('/about', fn() => view('about'))->name('about');
+Route::get('/faq',   fn() => view('faq'))->name('faq');
+
+Route::get('/contact',  [ContactController::class, 'index'])->name('contact');
+Route::post('/contact', [ContactController::class, 'submit'])->name('contact.submit');
 
 Route::get('/test-email', function () {
-    Mail::raw('Ini adalah email percobaan dari Laravel.', function ($message) {
-        $message->to('alamat@email.com')
-            ->subject('Tes Email dari Laravel');
+    Mail::raw('Test email dari Laravel.', function ($msg) {
+        $msg->to('alamat@email.com')->subject('Tes Email');
     });
-
     return 'Email dikirim!';
 });
 
-Route::get('/contact', function () {
-    return view('contact');
-})->name('contact');
-Route::get('/contact', [ContactController::class, 'index'])->name('contact');
-Route::post('/contact', [ContactController::class, 'submit'])->name('contact.submit');
+// ── Dashboard ─────────────────────────────────────────────────────
 
-Route::get('/about', function () {
-    return view('about');
-})->name('about');
+Route::get('/dashboard', fn() => view('dashboard'))
+    ->middleware(['auth', 'verified'])
+    ->name('dashboard');
 
-Route::get('/faq', function () {
-    return view('faq');
-})->name('faq');
+// ── Fingerprint (sebelum login, tanpa auth) ───────────────────────
 
+Route::post('/cek-fingerprint', [FingerprintController::class, 'check'])
+    ->name('cek.fingerprint');
 
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+// ── Semua role yang sudah login ───────────────────────────────────
 
-
-Route::middleware(['auth', CheckRole::class . ':admin,tpi,pembeli'])->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+Route::middleware(['auth', CheckRole::class . ':admin,dinas,tpi,pembeli'])->group(function () {
+    Route::get('/profile',    [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile',  [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-    // Penawaran store harus berada di sini karena pembeli juga bisa menawar
-    Route::post('/produk/{id}/penawaran', [PenawaranController::class, 'store'])->name('penawaran.store');
+
+    // Pembeli bisa menawar (diakses dari semua role tapi logic di controller)
+    Route::post('/produk/{id}/penawaran', [PenawaranController::class, 'store'])
+        ->name('penawaran.store');
 });
 
-Route::middleware(['auth', CheckRole::class . ':admin'])->group(function () {
-    Route::get('/tpi', [TpiController::class, 'index'])->name('tpi.index');
-    Route::get('/tpi/create', [TpiController::class, 'create'])->name('tpi.create');
-    Route::post('/tpi/store', [TpiController::class, 'store'])->name('tpi.store');
-    Route::get('/tpi/{user}/edit', [TpiController::class, 'edit'])->name('tpi.edit');
-    Route::put('/tpi/{user}', [TpiController::class, 'update'])->name('tpi.update');
-    Route::patch('/tpi/{user}/toggle-status', [TpiController::class, 'toggleStatus'])->name('tpi.toggle-status');
+// ── Admin saja ────────────────────────────────────────────────────
 
+Route::middleware(['auth', CheckRole::class . ':admin'])->group(function () {
+    // Manajemen Dinas (hanya admin yang bisa buat akun dinas)
+    Route::get('/dinas',                       [DinasController::class, 'index'])->name('dinas.index');
+    Route::get('/dinas/create',                [DinasController::class, 'create'])->name('dinas.create');
+    Route::post('/dinas',                      [DinasController::class, 'store'])->name('dinas.store');
+    Route::get('/dinas/{dinas}/edit',          [DinasController::class, 'edit'])->name('dinas.edit');
+    Route::put('/dinas/{dinas}',               [DinasController::class, 'update'])->name('dinas.update');
+    Route::patch('/dinas/{dinas}/toggle-status', [DinasController::class, 'toggleStatus'])
+        ->name('dinas.toggle-status');
+
+    // Manajemen Pembeli
     Route::get('/pembeli', [PembeliController::class, 'index'])->name('pembeli.index');
 });
 
-Route::middleware(['auth', CheckRole::class . ':admin,tpi'])->group(function () {
+// ── Admin + Dinas: kelola TPI ─────────────────────────────────────
+// Admin bisa kelola semua TPI, Dinas hanya bisa kelola TPI miliknya
+
+Route::middleware(['auth', CheckRole::class . ':admin,dinas'])->group(function () {
+    // Daftar TPI
+    // (admin lihat semua, dinas lihat miliknya — difilter di controller)
+    Route::get('/tpi',                       [DinasController::class, 'tpiIndex'])->name('tpi.index');
+    Route::get('/tpi/create',                [DinasController::class, 'tpiCreate'])->name('tpi.create');
+    Route::post('/tpi',                      [DinasController::class, 'tpiStore'])->name('tpi.store');
+    Route::get('/tpi/{tpi}/edit',            [DinasController::class, 'tpiEdit'])->name('tpi.edit');
+    Route::put('/tpi/{tpi}',                 [DinasController::class, 'tpiUpdate'])->name('tpi.update');
+    Route::patch('/tpi/{tpi}/toggle-status', [DinasController::class, 'tpiToggleStatus'])
+        ->name('tpi.toggle-status');
+});
+
+// ── Admin + Dinas + TPI: laporan ──────────────────────────────────
+
+Route::middleware(['auth', CheckRole::class . ':admin,dinas,tpi'])->group(function () {
     Route::get('/laporan-lelang', [LaporanLelangController::class, 'index'])->name('laporan.lelang');
     Route::get('/laporan/export', [LaporanLelangController::class, 'export'])->name('laporan.export');
 });
 
-
+// ── TPI saja: produk & lelang ─────────────────────────────────────
 
 Route::middleware(['auth', CheckRole::class . ':tpi'])->group(function () {
+    // CRUD produk (index, create, store, edit, update, destroy)
+    // 'show' dikecualikan karena dipakai ulang untuk pembeli
+    Route::resource('produk', ProdukController::class)->except(['show']);
 
-    // Route untuk Produk (tetap di sini jika hanya untuk TPI)
-    // Resource route sudah mencakup index, create, store, edit, update, destroy
-    Route::resource('produk', ProdukController::class)->except(['show']); // 'show' akan kita definisikan ulang untuk penawaran
-    // Catatan: Jika Anda ingin menggunakan show bawaan Laravel untuk detail produk TPI,
-    // maka pindahkan route showPenawaran ke path yang berbeda atau gunakan nama metode yang berbeda.
+    // Mulai & selesaikan lelang
+    Route::post('/lelang/{produk}/mulai',   [ProdukController::class, 'mulai'])->name('lelang.mulai');
+    Route::put('/lelang/{produk}/selesai',  [ProdukController::class, 'selesaiLelang'])->name('lelang.selesai');
 
-    // Route untuk memulai lelang
-    Route::post('/lelang/{produk}/mulai', [ProdukController::class, 'mulai'])->name('lelang.mulai');
+    // Daftar penawaran per produk
+    Route::get('/produk/{produk}/penawaran', [ProdukController::class, 'showPenawaran'])
+        ->name('produk.penawaran');
 
-    // **PERBAIKAN:** Mengarahkan route 'lelang.selesai' ke metode 'selesaiLelang'
-    Route::put('/lelang/{produk}/selesai', [ProdukController::class, 'selesaiLelang'])->name('lelang.selesai');
+    // Notifikasi WA ke pemenang cadangan
+    Route::post('/produk/{id}/kirim-notif-cadangan', [ProdukController::class, 'kirimNotifCadangan'])
+        ->name('produk.kirimNotifCadangan');
 
-    // **PERBAIKAN:** Menggunakan nama metode 'showPenawaran' dan path yang lebih spesifik
-    // Ini adalah route untuk melihat daftar penawaran untuk suatu produk
-    Route::get('/produk/{produk}/penawaran', [ProdukController::class, 'showPenawaran'])->name('produk.penawaran');
-
-    // Notifikasi ke penawar kedua
-    Route::post('/produk/{id}/kirim-notif-cadangan', [ProdukController::class, 'kirimNotifCadangan'])->name('produk.kirimNotifCadangan');
-
-
-    // **DIHAPUS/DIKOMEN:** Route ini kemungkinan redundan karena selesaiLelang sudah menentukan pemenang
-    // Jika Anda benar-benar membutuhkan ini sebagai aksi terpisah, logika di controller harus diperbarui
-    // Route::post('/produk/{produk}/tentukan-pemenang', [ProdukController::class, 'tentukanPemenang'])->name('produk.tentukanPemenang');
-
-    // Contoh: Route untuk menutup lelang secara otomatis (bisa dipanggil oleh cron job)
-    // Untuk pengembangan, diletakkan di sini, tapi untuk produksi, pertimbangkan middleware lain
-    Route::get('/lelang/tutup-otomatis', [ProdukController::class, 'tutupLelangOtomatis'])->name('lelang.tutup-otomatis');
+    // Tutup lelang otomatis (dipanggil cron job atau manual)
+    Route::get('/lelang/tutup-otomatis', [ProdukController::class, 'tutupLelangOtomatis'])
+        ->name('lelang.tutup-otomatis');
 });
 
+// ── TPI + Pembeli: jadwal ─────────────────────────────────────────
+
 Route::middleware(['auth', CheckRole::class . ':tpi,pembeli'])->group(function () {
-    // Route untuk manajemen jadwal lelang (CRUD)
-    Route::resource('jadwal', JadwalController::class); // Hapus ->except(['show']) jika Anda punya show
+    Route::resource('jadwal', JadwalController::class);
     Route::get('/jadwallelang', [JadwalController::class, 'index1'])->name('jadwallelang');
 });
 
+// ── Pembeli saja ──────────────────────────────────────────────────
+
 Route::middleware(['auth', CheckRole::class . ':pembeli'])->group(function () {
-    // Route untuk menampilkan produk yang sedang dilelang kepada pembeli
-    Route::get('/lelang', [ProdukController::class, 'index2'])->name('lelang.index');
-    // Route untuk menampilkan detail produk lelang spesifik (untuk pembeli)
-    // Menggunakan 'show' dari ProdukController
+    // Daftar & detail produk lelang aktif
+    Route::get('/lelang',      [ProdukController::class, 'index2'])->name('lelang.index');
     Route::get('/lelang/{id}', [ProdukController::class, 'show'])->name('lelang.show');
 
-    Route::get('/lelang/{id}/pembayaran', [PembayaranController::class, 'showPembayaran'])->name('lelang.pembayaran');
-    Route::post('/lelang/{id}/pembayaran/charge', [PembayaranController::class, 'chargePembayaran'])->name('lelang.pembayaran.charge');
-    Route::get('/lelang/{id}/bukti-pembayaran', [PembayaranController::class, 'buktiPembayaran'])->name('lelang.bukti-pembayaran');
-    Route::get('/bukti-pembayaran/{id}/download', [PembayaranController::class, 'downloadBuktiPembayaran'])->name('bukti-pembayaran.download');
-    Route::get('/pembayaran/konfirmasi/{id}', [PembayaranController::class, 'konfirmasiPembayaran'])->name('pembayaran.konfirmasi');
-
-
-    Route::middleware(['auth'])->group(function () {});
+    // Pembayaran
+    Route::get('/lelang/{id}/pembayaran',          [PembayaranController::class, 'showPembayaran'])
+        ->name('lelang.pembayaran');
+    Route::post('/lelang/{id}/pembayaran/charge',  [PembayaranController::class, 'chargePembayaran'])
+        ->name('lelang.pembayaran.charge');
+    Route::get('/lelang/{id}/bukti-pembayaran',    [PembayaranController::class, 'buktiPembayaran'])
+        ->name('lelang.bukti-pembayaran');
+    Route::get('/bukti-pembayaran/{id}/download',  [PembayaranController::class, 'downloadBuktiPembayaran'])
+        ->name('bukti-pembayaran.download');
+    Route::get('/pembayaran/konfirmasi/{id}',       [PembayaranController::class, 'konfirmasiPembayaran'])
+        ->name('pembayaran.konfirmasi');
 });
 
+// ── SSE Realtime (semua role yang login) ──────────────────────────
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/api/realtime/attendance-stream', [RealtimeMonitoringController::class, 'stream'])
+        ->name('realtime.attendance-stream');
+});
 
 require __DIR__ . '/auth.php';

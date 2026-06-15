@@ -15,20 +15,27 @@
             'admin' => [
                 'title' => 'Panel Administrasi',
                 'color' => 'red',
-                'text' => 'Selamat datang di panel administrasi Pelangi! Sebagai admin, Anda memiliki kontrol penuh untuk mengelola sistem pelelangan, memantau aktivitas TPI dan pembeli, serta mengatur kebijakan lelang. Pastikan untuk selalu memantau aktivitas transaksi dan menjaga integritas sistem untuk mendukung transparansi pelelangan ikan di Banyuwangi.'
+                'text'  => 'Selamat datang di panel administrasi Pelangi! Sebagai admin, Anda memiliki kontrol penuh untuk mengelola sistem pelelangan, memantau aktivitas TPI dan pembeli, serta mengatur kebijakan lelang. Pastikan untuk selalu memantau aktivitas transaksi dan menjaga integritas sistem untuk mendukung transparansi pelelangan ikan di Banyuwangi.'
+            ],
+            'dinas' => [
+                'title' => 'Panel Dinas',
+                'color' => 'purple',
+                'text'  => 'Selamat datang di panel Dinas Pelangi Banyuwangi! Sebagai pengelola dinas, Anda dapat mendaftarkan dan mengelola TPI yang berada di bawah pengawasan dinas Anda, memantau aktivitas lelang, serta melihat laporan hasil pelelangan ikan di wilayah Anda.'
             ],
             'tpi' => [
                 'title' => 'Sistem TPI Pelangi',
                 'color' => 'green',
-                'text' => 'Selamat datang di sistem TPI Pelangi Banyuwangi! Sebagai pengelola TPI, Anda dapat mendaftarkan hasil tangkapan nelayan, mengatur jadwal lelang, dan memantau proses pelelangan. Pastikan untuk selalu memperbarui informasi stok ikan, kualitas, dan harga dasar untuk memastikan proses lelang berjalan lancar dan menguntungkan semua pihak.'
+                'text'  => 'Selamat datang di sistem TPI Pelangi Banyuwangi! Sebagai pengelola TPI, Anda dapat mendaftarkan hasil tangkapan nelayan, mengatur jadwal lelang, dan memantau proses pelelangan. Pastikan untuk selalu memperbarui informasi stok ikan, kualitas, dan harga dasar untuk memastikan proses lelang berjalan lancar dan menguntungkan semua pihak.'
             ],
             'pembeli' => [
                 'title' => 'Sistem Pelelangan Ikan',
                 'color' => 'blue',
-                'text' => 'Selamat datang di sistem pelelangan ikan Pelangi Banyuwangi! Sebagai pembeli, Anda dapat mengikuti lelang ikan segar langsung dari nelayan terpercaya, melihat jadwal lelang, dan melakukan penawaran. Pastikan untuk memeriksa jadwal lelang secara berkala dan siapkan saldo yang cukup untuk mendapatkan ikan berkualitas terbaik dengan harga terbaik.'
-            ]
+                'text'  => 'Selamat datang di sistem pelelangan ikan Pelangi Banyuwangi! Sebagai pembeli, Anda dapat mengikuti lelang ikan segar langsung dari nelayan terpercaya, melihat jadwal lelang, dan melakukan penawaran. Pastikan untuk memeriksa jadwal lelang secara berkala dan siapkan saldo yang cukup untuk mendapatkan ikan berkualitas terbaik dengan harga terbaik.'
+            ],
         ];
-        $currentInfo = $infoData[$userRole];
+
+        // Fallback jika role tidak dikenali
+        $currentInfo = $infoData[$userRole] ?? $infoData['pembeli'];
     @endphp
 
     <!-- Informasi Utama -->
@@ -37,22 +44,51 @@
             <div class="flex items-start space-x-4">
                 <div class="bg-{{ $currentInfo['color'] }}-100 rounded-full p-2 flex-shrink-0">
                     <svg class="w-5 h-5 text-{{ $currentInfo['color'] }}-600" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                        <path fill-rule="evenodd"
+                            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                            clip-rule="evenodd" />
                     </svg>
                 </div>
                 <div>
                     <h4 class="font-medium text-gray-900">{{ $currentInfo['title'] }}</h4>
-                    <p class="text-gray-600 text-sm mt-1">
-                        {{ $currentInfo['text'] }}
-                    </p>
+                    <p class="text-gray-600 text-sm mt-1">{{ $currentInfo['text'] }}</p>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Tambahan khusus untuk pembeli -->
+    <!-- Tambahan khusus untuk Dinas -->
+    @if ($userRole === 'dinas')
+        <div class="mt-6 bg-white shadow sm:rounded-lg p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">🏢 Ringkasan Dinas Anda</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="border rounded-lg p-4 bg-purple-50">
+                    <p class="text-sm text-gray-500">Total TPI Terdaftar</p>
+                    <p class="text-2xl font-bold text-purple-700">
+                        {{ auth()->user()->tpiList()->count() }}
+                    </p>
+                </div>
+                <div class="border rounded-lg p-4 bg-green-50">
+                    <p class="text-sm text-gray-500">TPI Aktif</p>
+                    <p class="text-2xl font-bold text-green-700">
+                        {{ auth()->user()->tpiList()->where('status', 1)->count() }}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-6 bg-purple-50 border-l-4 border-purple-400 p-6 rounded">
+            <h3 class="text-purple-800 font-semibold text-base">💡 Panduan Dinas</h3>
+            <ul class="list-disc list-inside text-sm text-gray-700 mt-2 space-y-1">
+                <li>Tambahkan TPI baru melalui menu <strong>TPI Saya</strong>.</li>
+                <li>Pantau status aktif/nonaktif setiap TPI di bawah dinas Anda.</li>
+                <li>Lihat laporan lelang untuk memantau kinerja TPI.</li>
+            </ul>
+        </div>
+    @endif
+
+    <!-- Tambahan khusus untuk Pembeli -->
     @if ($userRole === 'pembeli')
-        <!-- Jenis-Jenis Ikan Populer -->
         <div class="mt-6 bg-white shadow sm:rounded-lg p-6">
             <h3 class="text-lg font-semibold text-gray-800 mb-4">🎣 Jenis-Jenis Ikan Populer</h3>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -77,7 +113,6 @@
             </div>
         </div>
 
-        <!-- Tips Lelang -->
         <div class="mt-6 bg-blue-50 border-l-4 border-blue-400 p-6 rounded">
             <h3 class="text-blue-800 font-semibold text-base">💡 Tips Menang Lelang</h3>
             <ul class="list-disc list-inside text-sm text-gray-700 mt-2 space-y-1">
@@ -87,4 +122,5 @@
             </ul>
         </div>
     @endif
+
 </x-app-layout>
